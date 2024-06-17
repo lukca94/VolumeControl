@@ -1,10 +1,7 @@
 ﻿using CSCore.CoreAudioAPI;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace VolumeControl
 {
@@ -19,8 +16,24 @@ namespace VolumeControl
             }
         }
     }
-    static class GetSession
-    { 
-    
+    public class Session
+    {
+        public readonly AudioSessionControl2 control;
+        public readonly SimpleAudioVolume volume; 
+        public string name;
+        public int id;
+        //icon, mute state?, group?, device?
+                
+        public Session(AudioSessionControl session) //contains all info and parameters for an audio session
+        {
+            control = session.QueryInterface<AudioSessionControl2>();//rozepsat na id a name?
+            volume = session.QueryInterface<SimpleAudioVolume>();
+            id = control.ProcessID;
+            name = control.Process.ToString();
+            int openBracketIndex = name.LastIndexOf('(')+1;
+            int closeBracketIndex = name.LastIndexOf(')');
+            name = name.Substring(openBracketIndex, closeBracketIndex - openBracketIndex);
+            name = name[0].ToString().ToUpper()+name.Substring(1);
+        }
     }
 }
