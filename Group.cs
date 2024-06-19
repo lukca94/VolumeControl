@@ -1,19 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace VolumeControl
 {
-    internal class Group //"Music", "Games", "Video", "Communications"
+    public class Group //"Music", "Games", "Video", "Communications"
     {
-        public string name;
-        public List<string> members;
+        public List<string> members = new List<string>();
+        public string Name { get; set; }//Replace spaces?
+        public List<string> Members { get { return members; } set { members = value; } }
 
-        public Group(string name)
-        {
-            this.name = name;
-        }
+        
     }
 }

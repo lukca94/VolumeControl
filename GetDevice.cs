@@ -27,7 +27,7 @@ namespace VolumeControl
                             int deviceIndex = Int32.Parse(input);
                             if (deviceIndex <= 0 || deviceIndex > devices.Count())
                             {
-                                Console.Write("\n    Invalid input, try again: ");
+                                Console.Write("\nInvalid input...\n ");
                                 continue;
                             }
                             Console.WriteLine();
@@ -35,7 +35,7 @@ namespace VolumeControl
                         }
                         catch (Exception)
                         {
-                            Console.Write("\n    Invalid input, try again: ");
+                            Console.Write("\nInvalid input...\n ");
                             continue;
                         }
                     }
