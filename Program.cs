@@ -39,7 +39,7 @@ namespace VolumeControl
                     }
                     else if (choice == 1) //group control
                     {
-                        Control.GroupActions(groups);
+                        Control.GroupActions(groups, sessionsList);
                     }
                     else if (choice == 2) //process control
                     {
@@ -59,11 +59,6 @@ namespace VolumeControl
                     Console.WriteLine("Invalid input...\n");
                     continue;
                 }
-
-
-                //choose action with groups (volume or edit members)
-                //if volume
-                //pick a group and volume controls
             }
             
             Console.WriteLine("------------------------------------------------------------------------------------------------------");

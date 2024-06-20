@@ -10,6 +10,120 @@ namespace VolumeControl
 {
     static class Control
     {
+        public static List<Session> ActiveSessionsFromGroup(Group[] groups, int groupIndex, List<Session> sessionsList)
+        {
+            List<Session> activeSessions = new List<Session>();
+            for (int i = 0; i < groups[groupIndex].members.Count(); i++)
+            {
+                for (int j = 0; j < sessionsList.Count(); j++)
+                {
+                    if (groups[groupIndex].members[i] == sessionsList[j].name)
+                        activeSessions.Add(sessionsList[j]);
+                }
+            }
+            return activeSessions;
+        }
+        public static void GroupVolumeControl(Group[] groups, int groupIndex, List<Session> sessionsList)
+        {
+            while (true)
+            {
+                List<Session> activeSessions = ActiveSessionsFromGroup(groups, groupIndex, sessionsList);
+                Console.WriteLine("------------------------------------------------------------------------------------------------------");
+                Console.WriteLine($"\n    Choose an operation for group {groups[groupIndex].Name}:\n");
+                Console.Write("    Volume up (1), Volume down (2), Toggle mute (3) or Return (0): ");
+                string input = Console.ReadLine();
+                Console.WriteLine();
+                try
+                {
+                    int choice = Int32.Parse(input);
+                    if (input == "1")
+                    {
+                        foreach(var currentSession in activeSessions)
+                        {
+                            VolumeUp(currentSession, 5);
+                        }
+                        continue;
+                    }
+                    else if (input == "2")
+                    {
+                        foreach (var currentSession in activeSessions)
+                        {
+                            VolumeDown(currentSession, 5);
+                        }
+                        continue;
+                    }
+                    else if (input == "3")
+                    {
+                        foreach (var currentSession in activeSessions)
+                        {
+                            Mute(currentSession);
+                        }
+                        continue;
+                    }
+                    else if (input == "0")
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        GroupVolumeControl(groups, choice - 1, sessionsList);
+                    }
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("\nInvalid input...\n ");
+                    continue;
+                }
+            }
+        }
+        public static void GroupVolumeControlChoose(Group[] groups, List<Session> sessionsList)
+        {
+            while (true)
+            {
+                Console.WriteLine("------------------------------------------------------------------------------------------------------");
+                Console.WriteLine("\n    Groups:\n");
+                for (int i = 0; i < 4; i++)
+                {
+                    Console.WriteLine($"{i + 1}. {groups[i].Name}");
+                    if (groups[i].Members.Count == 0)
+                        Console.WriteLine("  - No members");
+                    else
+                    {
+                        for (int j = 0; j < groups[i].Members.Count; j++)
+                        {
+                            Console.WriteLine($"  - {groups[i].Members[j]}");
+                        }
+                    }
+                }
+                Console.Write("\n    Pick a group to Control (1,2,3,4) or Return (0): ");
+                string input = Console.ReadLine();
+                Console.WriteLine();
+                try
+                {
+                    int choice = Int32.Parse(input);
+                    if (choice < 0 || choice > 4)
+                    {
+                        Console.WriteLine("\nInvalid input...\n ");
+                        continue;
+                    }
+                    else if (choice == 0)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        GroupVolumeControl(groups, choice - 1, sessionsList);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("\nInvalid input...\n ");
+                    Console.Write(e.ToString()); 
+                    continue;
+                }
+
+            }
+        }
         public static void GroupMembersEditAction(Group[] groups, int groupIndex)
         {
             while (true)
@@ -220,7 +334,7 @@ namespace VolumeControl
                 }
             }
         }
-        public static void GroupActions(Group[] groups)
+        public static void GroupActions(Group[] groups, List<Session> sessionsList)
         {
             while (true)
             {
@@ -242,7 +356,7 @@ namespace VolumeControl
                     }
                     else if (choice == 1) // Volume control
                     {
-
+                        GroupVolumeControlChoose(groups,sessionsList);
                     }
                     else if (choice == 2) // Group edit
                     {
@@ -382,7 +496,7 @@ namespace VolumeControl
                 session.volume.MasterVolume = 1;
             else
                 session.volume.MasterVolume = session.volume.MasterVolume + increment;
-            Console.WriteLine("Current Volume is: " + session.volume.MasterVolume * 100 + "%\n");
+            Console.WriteLine($"Current volume of {session.name} is: {session.volume.MasterVolume * 100}%\n");
         }
         public static void VolumeDown(Session session, float increment) //increment inputed in %
         {
@@ -391,19 +505,19 @@ namespace VolumeControl
                 session.volume.MasterVolume = 0;
             else
                 session.volume.MasterVolume = session.volume.MasterVolume - increment;
-            Console.WriteLine("Current Volume is: " + session.volume.MasterVolume * 100 + "%\n");
+            Console.WriteLine($"Current volume of {session.name} is: {session.volume.MasterVolume * 100}%\n");
         }
         public static void Mute(Session session) //mute toggle
         {
             if (session.volume.IsMuted)
             {
                 session.volume.IsMuted = false;
-                Console.WriteLine("Process is now unmuted.\n");
+                Console.WriteLine($"{session.name} is now unmuted.\n");
             }
             else
             {
                 session.volume.IsMuted = true;
-                Console.WriteLine("Process is now muted.\n");
+                Console.WriteLine($"{session.name} is now muted.\n");
             }
         }
     }
