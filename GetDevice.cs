@@ -6,7 +6,7 @@ namespace VolumeControl
 {
     static class GetDevice
     {    
-        public static AudioSessionManager2 GetAudioDevice() //Get all active devices and choose one
+        public static MMDevice GetAudioDevice() //Get all active devices and choose one
         {
             using (var enumerator = new MMDeviceEnumerator())
             {
@@ -31,7 +31,7 @@ namespace VolumeControl
                                 continue;
                             }
                             Console.WriteLine();
-                            return AudioSessionManager2.FromMMDevice(devices[deviceIndex - 1]);
+                            return devices[deviceIndex - 1];
                         }
                         catch (Exception)
                         {
@@ -42,16 +42,14 @@ namespace VolumeControl
                 }
             }
         }
-        public static AudioSessionManager2 GetDefaultAudioDevice() //Get default active device
+        public static MMDevice GetDefaultAudioDevice() //Get default active device
         {
-            using (var enumerator = new MMDeviceEnumerator())
-            {
-                using (var device = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia))
-                {
-                    Console.WriteLine($"Default device: {device.FriendlyName}\n"); 
-                    return AudioSessionManager2.FromMMDevice(device);
-                }
-            }
+            MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
+            MMDevice device = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+                
+            Console.WriteLine($"Default device: {device.FriendlyName}\n");
+            
+            return device;
         }
     }
 }

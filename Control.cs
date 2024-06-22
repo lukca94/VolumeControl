@@ -1,15 +1,124 @@
-﻿using System;
+﻿using CSCore.CoreAudioAPI;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Xml.Linq;
+using static System.Collections.Specialized.BitVector32;
 
 namespace VolumeControl
 {
     static class Control
     {
+        public static void MainChoice(Group[] groups, List<Session> sessions, MMDevice device)
+        {
+            while (true)
+            {
+                Console.WriteLine("------------------------------------------------------------------------------------------------------");
+                Console.Write("\n    Choose between Group control (1), Process control (2) or Exit (0): "); //add settings (increment, remove files?,..)
+                string input = Console.ReadLine();
+                Console.WriteLine();
+                try
+                {
+                    int choice = Int32.Parse(input);
+                    if (choice < 0 || choice > 2)
+                    {
+                        Console.WriteLine("Invalid input...\n");
+                        continue;
+                    }
+                    else if (choice == 0)
+                    {
+                        break;
+                    }
+                    else if (choice == 1) //group control
+                    {
+                        Control.GroupActions(groups, sessions, device);
+                    }
+                    else if (choice == 2) //process control
+                    {
+                        while (true)
+                        {
+                            var currentSession = Control.ChooseSession(sessions);
+                            if (currentSession != null)
+                            {
+                                Control.SessionActions(currentSession);
+                            }
+                            else { break; }
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Invalid input...\n");
+                    continue;
+                }
+            }
+        }
+        public static void DeviceVolume(MMDevice device)
+        {
+            float increment = 5;
+            increment = increment / 100;
+            var volume = AudioEndpointVolume.FromDevice(device);
+            while (true)
+            {
+                Console.WriteLine("------------------------------------------------------------------------------------------------------");
+                Console.WriteLine($"\n    Choose an operation for Device:\n");
+                Console.Write("    Volume up (1), Volume down (2), Toggle mute (3) or Return (0): ");
+                string input = Console.ReadLine();
+                Console.WriteLine();   
+                try
+                {
+                    int choice = Int32.Parse(input);
+                    if (choice < 0 || choice > 3)
+                    {
+                        Console.WriteLine("\nInvalid input...\n ");
+                        continue;
+                    }
+                    else if (input == "1")
+                    {
+                        if (volume.MasterVolumeLevelScalar + increment > 1)
+                            volume.MasterVolumeLevelScalar = 1;
+                        else
+                            volume.MasterVolumeLevelScalar = float.Parse(Math.Round(volume.MasterVolumeLevelScalar + increment, 2).ToString());
+                        Console.WriteLine($"Current volume of Device is: {volume.MasterVolumeLevelScalar * 100}%\n");
+                        continue;
+                    }
+                    else if (input == "2")
+                    {
+                        if (volume.MasterVolumeLevelScalar - increment < 0)
+                            volume.MasterVolumeLevelScalar = 0;
+                        else
+                            volume.MasterVolumeLevelScalar = float.Parse(Math.Round(volume.MasterVolumeLevelScalar - increment, 2).ToString());
+                        Console.WriteLine($"Current volume of Device is: {volume.MasterVolumeLevelScalar * 100}%\n");
+                        continue;
+                    }
+                    else if (input == "3")
+                    {
+                        if (volume.IsMuted)
+                        {
+                            volume.IsMuted = false;
+                            Console.WriteLine($"Device is now unmuted.\n");
+                        }
+                        else
+                        {
+                            volume.IsMuted = true;
+                            Console.WriteLine($"Device is now muted.\n");
+                        }
+                        continue;
+                    }
+                    else if (input == "0")
+                    {
+                        break;
+                    }
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("\nInvalid input...\n ");
+                    continue;
+                }
+            }
+        }
         public static List<Session> ActiveSessionsFromGroup(Group[] groups, int groupIndex, List<Session> sessionsList)
         {
             List<Session> activeSessions = new List<Session>();
@@ -36,7 +145,12 @@ namespace VolumeControl
                 try
                 {
                     int choice = Int32.Parse(input);
-                    if (input == "1")
+                    if (choice < 0 || choice > 3)
+                    {
+                        Console.WriteLine("\nInvalid input...\n ");
+                        continue;
+                    }
+                    else if (input == "1")
                     {
                         foreach(var currentSession in activeSessions)
                         {
@@ -76,7 +190,7 @@ namespace VolumeControl
                 }
             }
         }
-        public static void GroupVolumeControlChoose(Group[] groups, List<Session> sessionsList)
+        public static void GroupVolumeControlChoose(Group[] groups, List<Session> sessionsList, MMDevice device)
         {
             while (true)
             {
@@ -95,16 +209,21 @@ namespace VolumeControl
                         }
                     }
                 }
-                Console.Write("\n    Pick a group to Control (1,2,3,4) or Return (0): ");
+                Console.WriteLine("5. Device");
+                Console.Write("\n    Pick a group to Control (1,2,3,4,5) or Return (0): ");
                 string input = Console.ReadLine();
                 Console.WriteLine();
                 try
                 {
                     int choice = Int32.Parse(input);
-                    if (choice < 0 || choice > 4)
+                    if (choice < 0 || choice > 5)
                     {
                         Console.WriteLine("\nInvalid input...\n ");
                         continue;
+                    }
+                    else if(choice == 5)
+                    {
+                        DeviceVolume(device);
                     }
                     else if (choice == 0)
                     {
@@ -334,7 +453,7 @@ namespace VolumeControl
                 }
             }
         }
-        public static void GroupActions(Group[] groups, List<Session> sessionsList)
+        public static void GroupActions(Group[] groups, List<Session> sessionsList, MMDevice device)
         {
             while (true)
             {
@@ -356,7 +475,7 @@ namespace VolumeControl
                     }
                     else if (choice == 1) // Volume control
                     {
-                        GroupVolumeControlChoose(groups,sessionsList);
+                        GroupVolumeControlChoose(groups,sessionsList,device);
                     }
                     else if (choice == 2) // Group edit
                     {
@@ -495,7 +614,7 @@ namespace VolumeControl
             if (session.volume.MasterVolume + increment > 1)
                 session.volume.MasterVolume = 1;
             else
-                session.volume.MasterVolume = session.volume.MasterVolume + increment;
+                session.volume.MasterVolume = float.Parse(Math.Round(session.volume.MasterVolume + increment, 2).ToString());
             Console.WriteLine($"Current volume of {session.name} is: {session.volume.MasterVolume * 100}%\n");
         }
         public static void VolumeDown(Session session, float increment) //increment inputed in %
@@ -504,7 +623,7 @@ namespace VolumeControl
             if (session.volume.MasterVolume - increment < 0)
                 session.volume.MasterVolume = 0;
             else
-                session.volume.MasterVolume = session.volume.MasterVolume - increment;
+                session.volume.MasterVolume = float.Parse( Math.Round( session.volume.MasterVolume - increment,2).ToString());
             Console.WriteLine($"Current volume of {session.name} is: {session.volume.MasterVolume * 100}%\n");
         }
         public static void Mute(Session session) //mute toggle

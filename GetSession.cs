@@ -5,13 +5,11 @@ namespace VolumeControl
 {
     static class GetSessionEnumerator
     {
-        public static IEnumerable<AudioSessionControl> GetAudioSessionEnumerator()
+        public static IEnumerable<AudioSessionControl> GetAudioSessionEnumerator(MMDevice device)
         {
-            using (var sessionManager = GetDevice.GetDefaultAudioDevice()) //Change method for default or pick
-            {
-                var sessionEnumerator = sessionManager.GetSessionEnumerator();
-                return sessionEnumerator;
-            }
+            AudioSessionManager2 sessionManager = AudioSessionManager2.FromMMDevice(device);
+            var sessionEnumerator = sessionManager.GetSessionEnumerator();
+            return sessionEnumerator;
         }
     }
     public class Session
