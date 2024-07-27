@@ -18,6 +18,8 @@ namespace VolumeControl
             foreach (var session in sessionEnumerator)
             {
                 sessions.Add(new Session(session));
+
+                // PENIS
             }
 
             Group[] groups = Control.LoadGroups("GroupSave.json");
