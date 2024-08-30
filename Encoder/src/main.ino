@@ -1,52 +1,76 @@
 #include <Arduino.h>
-#include <Encoder.h>
 
 #define TOP 3
 #define BOT 2
 
-// volatile int stateTop = HIGH;
-// volatile int stateBot = HIGH;
+volatile bool passedTop = false;
+volatile bool passedBot = false;
+volatile int current = 0;
+int previous = 0;
+int increment = 0;
 
 void setup()
 {
 	Serial.begin(250000);
 	pinMode(TOP, INPUT_PULLUP);
 	pinMode(BOT, INPUT_PULLUP);
-	// attachInterrupt(digitalPinToInterrupt(TOP), ChangeTop, CHANGE ); 
-	attachInterrupt(digitalPinToInterrupt(BOT), RisingBot, RISING ); //this is fucked for some reason idk whyyyyyyyyyyyyyyyyyyyyyyyyyyy
-	// attachInterrupt(digitalPinToInterrupt(BOT), FallingBot, FALLING );
+	
+	//attachInterrupt(digitalPinToInterrupt(BOT), RisingBot, RISING ); //this is fucked for some reason idk whyyyyyyyyyyyyyyyyyyyyyyyyyyy
+	attachInterrupt(digitalPinToInterrupt(TOP), FallingTop, FALLING ); 
+	attachInterrupt(digitalPinToInterrupt(BOT), FallingBot, FALLING );
 
 }
 
 void loop()
 {
-	Serial.println(".");
-	delay(2000);
-	// if( digitalRead(TOP)==HIGH){
-	// 	Serial.println("TOP HIGH");
-	// }
-	// else{
-	// 	Serial.println("TOP LOW");
-	// }
-	// if( digitalRead(BOT)==HIGH){
-	// 	Serial.println("BOT HIGH");
-	// }
-	// else{
-	// 	Serial.println("BOT LOW");
-	// }
-
+	if (previous != current)
+	{
+		increment = current - previous;
+		if (increment > 0)
+		{
+			for (int i = 0; i < increment; i++)
+			{
+				Serial.println("OneUp");
+			}
+		}
+		else
+		{
+			increment = abs(increment);
+			for (int i = 0; i < increment; i++)
+			{
+				Serial.println("OneDown");
+			}
+		}
+	}
 }
 
-void ChangeTop()
+void FallingTop()
 {
-	Serial.println("ChangeTop");
+	if (passedBot == true)
+	{
+		current--;
+		passedBot == false;
+	}
+	else if (passedBot == false)
+	{
+		passedTop == true;
+	}
+}
+
+void FallingBot()
+{
+	if (passedTop == true)
+	{
+		current++;
+		passedTop == false;
+	}
+	else if (passedTop == false)
+	{
+		passedBot == true;
+	}
 }
 
 void RisingBot()
 {
 	Serial.println("RisingBot");
-}
-void FallingBot()
-{
-	Serial.println("FallingBot");
 }
