@@ -23,14 +23,17 @@ void setup()
 
 void loop()
 {
+	noInterrupts();
 	if (previous != current)
 	{
 		increment = current - previous;
+		Serial.println(increment);
 		if (increment > 0)
 		{
 			for (int i = 0; i < increment; i++)
 			{
-				Serial.println("OneUp");
+				Serial.print("OneUp ");
+				Serial.println(current);
 			}
 		}
 		else
@@ -38,10 +41,37 @@ void loop()
 			increment = abs(increment);
 			for (int i = 0; i < increment; i++)
 			{
-				Serial.println("OneDown");
+				Serial.print("OneDown ");
+				Serial.println(current);
 			}
 		}
+		previous = current;
 	}
+	//if (previous != current)
+	// {
+	// 	increment = current - previous;
+	// 	Serial.println(increment);
+	// 	if (increment > 0)
+	// 	{
+	// 		for (int i = 0; i < increment; i++)
+	// 		{
+	// 			Serial.print("OneUp ");
+	// 			Serial.println(current);
+	// 		}
+	// 	}
+	// 	else
+	// 	{
+	// 		increment = abs(increment);
+	// 		for (int i = 0; i < increment; i++)
+	// 		{
+	// 			Serial.print("OneDown ");
+	// 			Serial.println(current);
+	// 		}
+	// 	}
+	// 	previous = current;
+	// }
+
+	interrupts();
 }
 
 void FallingTop()
@@ -49,11 +79,11 @@ void FallingTop()
 	if (passedBot == true)
 	{
 		current--;
-		passedBot == false;
+		passedBot = false;
 	}
 	else if (passedBot == false)
 	{
-		passedTop == true;
+		passedTop = true;
 	}
 }
 
@@ -62,11 +92,11 @@ void FallingBot()
 	if (passedTop == true)
 	{
 		current++;
-		passedTop == false;
+		passedTop = false;
 	}
 	else if (passedTop == false)
 	{
-		passedBot == true;
+		passedBot = true;
 	}
 }
 
