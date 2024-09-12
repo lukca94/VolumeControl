@@ -9,6 +9,9 @@ volatile int current = 0;
 int previous = 0;
 int increment = 0;
 
+volatile bool topint = false;
+volatile bool botint = false;
+
 void setup()
 {
 	Serial.begin(250000);
@@ -24,29 +27,51 @@ void setup()
 void loop()
 {
 	noInterrupts();
+	if (topint == true)
+	{
+		if (passedBot == true)
+		{
+			current--;
+			passedBot = false;
+		}
+		else if (passedBot == false)
+		{
+			passedTop = true;
+		}
+		topint = false;
+	}
+	if(botint == true)
+	{
+		if (passedTop == true)
+		{
+			current++;
+			passedTop = false;
+		}
+		else if (passedTop == false)
+		{
+			passedBot = true;
+		}
+		botint = false;
+	}
+	
 	if (previous != current)
 	{
 		increment = current - previous;
 		Serial.println(increment);
 		if (increment > 0)
 		{
-			for (int i = 0; i < increment; i++)
-			{
-				Serial.print("OneUp ");
-				Serial.println(current);
-			}
+			Serial.print("OneUp ");
+			Serial.println(current);
 		}
 		else
 		{
-			increment = abs(increment);
-			for (int i = 0; i < increment; i++)
-			{
-				Serial.print("OneDown ");
-				Serial.println(current);
-			}
+			Serial.print("OneDown ");
+			Serial.println(current);
 		}
 		previous = current;
 	}
+	
+	interrupts();
 	//if (previous != current)
 	// {
 	// 	increment = current - previous;
@@ -71,36 +96,33 @@ void loop()
 	// 	previous = current;
 	// }
 
-	interrupts();
 }
 
 void FallingTop()
 {
-	if (passedBot == true)
-	{
-		current--;
-		passedBot = false;
-	}
-	else if (passedBot == false)
-	{
-		passedTop = true;
-	}
+	topint = true;
+	// if (passedBot == true)
+	// {
+	// 	current--;
+	// 	passedBot = false;
+	// }
+	// else if (passedBot == false)
+	// {
+	// 	passedTop = true;
+	// }
 }
 
 void FallingBot()
 {
-	if (passedTop == true)
-	{
-		current++;
-		passedTop = false;
-	}
-	else if (passedTop == false)
-	{
-		passedBot = true;
-	}
+	botint = true;
+	// if (passedTop == true)
+	// {
+	// 	current++;
+	// 	passedTop = false;
+	// }
+	// else if (passedTop == false)
+	// {
+	// 	passedBot = true;
+	// }
 }
 
-void RisingBot()
-{
-	Serial.println("RisingBot");
-}
