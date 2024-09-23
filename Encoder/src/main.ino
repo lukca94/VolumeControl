@@ -40,7 +40,7 @@ void loop()
 		}
 		topint = false;
 	}
-	if(botint == true)
+	if (botint == true)
 	{
 		if (passedTop == true)
 		{
@@ -70,59 +70,17 @@ void loop()
 		}
 		previous = current;
 	}
-	
-	interrupts();
-	//if (previous != current)
-	// {
-	// 	increment = current - previous;
-	// 	Serial.println(increment);
-	// 	if (increment > 0)
-	// 	{
-	// 		for (int i = 0; i < increment; i++)
-	// 		{
-	// 			Serial.print("OneUp ");
-	// 			Serial.println(current);
-	// 		}
-	// 	}
-	// 	else
-	// 	{
-	// 		increment = abs(increment);
-	// 		for (int i = 0; i < increment; i++)
-	// 		{
-	// 			Serial.print("OneDown ");
-	// 			Serial.println(current);
-	// 		}
-	// 	}
-	// 	previous = current;
-	// }
 
+	interrupts();
 }
 
 void FallingTop()
 {
 	topint = true;
-	// if (passedBot == true)
-	// {
-	// 	current--;
-	// 	passedBot = false;
-	// }
-	// else if (passedBot == false)
-	// {
-	// 	passedTop = true;
-	// }
 }
 
 void FallingBot()
 {
 	botint = true;
-	// if (passedTop == true)
-	// {
-	// 	current++;
-	// 	passedTop = false;
-	// }
-	// else if (passedTop == false)
-	// {
-	// 	passedBot = true;
-	// }
 }
 
