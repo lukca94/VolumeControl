@@ -1,128 +1,181 @@
 #include <Arduino.h>
 
-#define TOP 3
-#define BOT 2
+#define CLK 3
+#define DT 2
 
-volatile bool passedTop = false;
-volatile bool passedBot = false;
-volatile int current = 0;
-int previous = 0;
-int increment = 0;
-
-volatile bool topint = false;
-volatile bool botint = false;
+volatile bool CLKChanged = false;
+volatile bool DTChanged = false;
 
 void setup()
 {
 	Serial.begin(250000);
-	pinMode(TOP, INPUT_PULLUP);
-	pinMode(BOT, INPUT_PULLUP);
+	pinMode(CLK, INPUT_PULLUP);
+	pinMode(DT, INPUT_PULLUP);
 	
-	//attachInterrupt(digitalPinToInterrupt(BOT), RisingBot, RISING ); //this is fucked for some reason idk whyyyyyyyyyyyyyyyyyyyyyyyyyyy
-	attachInterrupt(digitalPinToInterrupt(TOP), FallingTop, FALLING ); 
-	attachInterrupt(digitalPinToInterrupt(BOT), FallingBot, FALLING );
+	//attachInterrupt(digitalPinToInterrupt(DT), RisingDT, RISING ); //this is fucked for some reason idk whyyyyyyyyyyyyyyyyyyyyyyyyyyy
+	attachInterrupt(digitalPinToInterrupt(CLK), ChangeCLK, CHANGE ); 
+	attachInterrupt(digitalPinToInterrupt(DT), ChangeDT, CHANGE );
 
 }
+typedef enum State	//CLK DT
+{
+	STATE_0,	//Idle 11
+	STATE_1,	//Backwards 10
+	STATE_2,	//Backwards 00
+	STATE_3,	//Backwards 01
+	STATE_4,	//Forwards 01
+	STATE_5,	//Forwards 00
+	STATE_6		//Forwards 10
+};
+
+typedef enum Input
+{
+	NOTHING,
+	INPUT_CLK,
+	INPUT_DT
+};
+
+class RotaryEncoder
+{
+	private:
+		State currentState = STATE_0; //State::STATE_1; je v tom rozdíl?
+
+		void rotaryState0(Input input)	//Idle 11
+		{
+			Serial.println("STATE0");
+			if (input == INPUT_CLK)
+				currentState = STATE_4;
+			else if(input == INPUT_DT)
+				currentState = STATE_1;
+		}
+		void rotaryState1(Input input)	//Backwards 10
+		{
+			Serial.println("STATE1");
+			if (input == INPUT_CLK)
+				currentState = STATE_2;
+			else if(input == INPUT_DT)
+				currentState = STATE_0;
+		}
+		void rotaryState2(Input input)	//Backwards 00
+		{
+			Serial.println("STATE2");
+			if (input == INPUT_CLK)
+				currentState = STATE_1;
+			else if(input == INPUT_DT)
+				currentState = STATE_3;
+		}
+		void rotaryState3(Input input)	//Backwards 01
+		{
+			Serial.println("STATE3");
+			if (input == INPUT_CLK)
+			{
+				currentState = STATE_0;
+				Serial.println("downies");
+			}
+			else if(input == INPUT_DT)
+				currentState = STATE_2;
+		}
+		void rotaryState4(Input input)	//Forwards 01
+		{
+			Serial.println("STATE4");
+			if (input == INPUT_CLK)
+				currentState = STATE_0;
+			else if(input == INPUT_DT)
+				currentState = STATE_5;
+		}
+		void rotaryState5(Input input)	//Forwards 00
+		{
+			Serial.println("STATE5");
+			if (input == INPUT_CLK)
+				currentState = STATE_6;
+			else if(input == INPUT_DT)
+				currentState = STATE_4;
+		}
+		void rotaryState6(Input input)	//Forwards 10
+		{
+			Serial.println("STATE6");
+			if (input == INPUT_CLK)
+				currentState = STATE_5;
+			else if(input == INPUT_DT)
+			{
+				currentState = STATE_0;
+				Serial.println("uppies");
+			}
+		}
+
+	public:
+		void rotaryChange(Input input)
+		{
+			Serial.println(currentState);
+			switch (input)
+			{
+			case STATE_0:
+				rotaryState0(input);
+				break;
+			case STATE_1:
+				rotaryState1(input);
+				break;
+			case STATE_2:
+				rotaryState2(input);
+				break;
+			case STATE_3:
+				rotaryState3(input);
+				break;
+			case STATE_4:
+				rotaryState4(input);
+				break;
+			case STATE_5:
+				rotaryState5(input);
+				break;
+			case STATE_6:
+				rotaryState6(input);
+				break;
+			}
+		}
+};
+
+Input input;
+RotaryEncoder encoder1;
 
 void loop()
 {
 	noInterrupts();
-	if (topint == true)
+
+	//translate interrupts
+	if (CLKChanged == true)
 	{
-		if (passedBot == true)
-		{
-			current--;
-			passedBot = false;
-		}
-		else if (passedBot == false)
-		{
-			passedTop = true;
-		}
-		topint = false;
+		input = INPUT_CLK;
+		CLKChanged = false;
 	}
-	if(botint == true)
+	else if (DTChanged == true)
 	{
-		if (passedTop == true)
-		{
-			current++;
-			passedTop = false;
-		}
-		else if (passedTop == false)
-		{
-			passedBot = true;
-		}
-		botint = false;
+		DTChanged = false;
+		Serial.println("DT");
+	}
+	else 
+	{
+		input = NOTHING;
 	}
 	
-	if (previous != current)
+	if (input != NOTHING)
 	{
-		increment = current - previous;
-		Serial.println(increment);
-		if (increment > 0)
-		{
-			Serial.print("OneUp ");
-			Serial.println(current);
-		}
-		else
-		{
-			Serial.print("OneDown ");
-			Serial.println(current);
-		}
-		previous = current;
+		Serial.println(input);
+		encoder1.rotaryChange(input);
+		// input = NOTHING;
 	}
+	
+	
 	
 	interrupts();
-	//if (previous != current)
-	// {
-	// 	increment = current - previous;
-	// 	Serial.println(increment);
-	// 	if (increment > 0)
-	// 	{
-	// 		for (int i = 0; i < increment; i++)
-	// 		{
-	// 			Serial.print("OneUp ");
-	// 			Serial.println(current);
-	// 		}
-	// 	}
-	// 	else
-	// 	{
-	// 		increment = abs(increment);
-	// 		for (int i = 0; i < increment; i++)
-	// 		{
-	// 			Serial.print("OneDown ");
-	// 			Serial.println(current);
-	// 		}
-	// 	}
-	// 	previous = current;
-	// }
-
 }
 
-void FallingTop()
+void ChangeCLK()
 {
-	topint = true;
-	// if (passedBot == true)
-	// {
-	// 	current--;
-	// 	passedBot = false;
-	// }
-	// else if (passedBot == false)
-	// {
-	// 	passedTop = true;
-	// }
+	CLKChanged = true;
 }
 
-void FallingBot()
+void ChangeDT()
 {
-	botint = true;
-	// if (passedTop == true)
-	// {
-	// 	current++;
-	// 	passedTop = false;
-	// }
-	// else if (passedTop == false)
-	// {
-	// 	passedBot = true;
-	// }
+	DTChanged = true;
 }
 
