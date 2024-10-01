@@ -38,11 +38,10 @@ typedef enum Input
 class RotaryEncoder
 {
 	private:
-		State currentState = STATE_0; //State::STATE_1; je v tom rozdíl?
+		State currentState = STATE_0; //State::STATE_0; je v tom rozdíl?
 
 		void rotaryState0(Input input)	//Idle 11
 		{
-			Serial.println("STATE0");
 			if (input == INPUT_CLK)
 				currentState = STATE_4;
 			else if(input == INPUT_DT)
@@ -50,7 +49,6 @@ class RotaryEncoder
 		}
 		void rotaryState1(Input input)	//Backwards 10
 		{
-			Serial.println("STATE1");
 			if (input == INPUT_CLK)
 				currentState = STATE_2;
 			else if(input == INPUT_DT)
@@ -58,7 +56,6 @@ class RotaryEncoder
 		}
 		void rotaryState2(Input input)	//Backwards 00
 		{
-			Serial.println("STATE2");
 			if (input == INPUT_CLK)
 				currentState = STATE_1;
 			else if(input == INPUT_DT)
@@ -66,7 +63,6 @@ class RotaryEncoder
 		}
 		void rotaryState3(Input input)	//Backwards 01
 		{
-			Serial.println("STATE3");
 			if (input == INPUT_CLK)
 			{
 				currentState = STATE_0;
@@ -77,7 +73,6 @@ class RotaryEncoder
 		}
 		void rotaryState4(Input input)	//Forwards 01
 		{
-			Serial.println("STATE4");
 			if (input == INPUT_CLK)
 				currentState = STATE_0;
 			else if(input == INPUT_DT)
@@ -85,7 +80,6 @@ class RotaryEncoder
 		}
 		void rotaryState5(Input input)	//Forwards 00
 		{
-			Serial.println("STATE5");
 			if (input == INPUT_CLK)
 				currentState = STATE_6;
 			else if(input == INPUT_DT)
@@ -93,7 +87,6 @@ class RotaryEncoder
 		}
 		void rotaryState6(Input input)	//Forwards 10
 		{
-			Serial.println("STATE6");
 			if (input == INPUT_CLK)
 				currentState = STATE_5;
 			else if(input == INPUT_DT)
@@ -106,8 +99,7 @@ class RotaryEncoder
 	public:
 		void rotaryChange(Input input)
 		{
-			Serial.println(currentState);
-			switch (input)
+			switch (currentState)
 			{
 			case STATE_0:
 				rotaryState0(input);
@@ -147,21 +139,16 @@ void loop()
 		input = INPUT_CLK;
 		CLKChanged = false;
 	}
-	else if (DTChanged == true)
+	if (DTChanged == true)
 	{
+		input = INPUT_DT;
 		DTChanged = false;
-		Serial.println("DT");
-	}
-	else 
-	{
-		input = NOTHING;
 	}
 	
 	if (input != NOTHING)
 	{
-		Serial.println(input);
 		encoder1.rotaryChange(input);
-		// input = NOTHING;
+		input = NOTHING;
 	}
 	
 	
