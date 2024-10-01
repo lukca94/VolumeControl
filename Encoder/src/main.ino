@@ -3,83 +3,54 @@
 #define TOP 3
 #define BOT 2
 
-volatile bool passedTop = false;
-volatile bool passedBot = false;
-volatile int current = 0;
-int previous = 0;
-int increment = 0;
+int increment1 = 0;
+int increment2 = 0;
 
 volatile bool topint = false;
 volatile bool botint = false;
 
 void setup()
 {
-	Serial.begin(250000);
-	pinMode(TOP, INPUT_PULLUP);
-	pinMode(BOT, INPUT_PULLUP);
+	Serial.begin(19200);
+	pinMode(TOP, INPUT);
+	pinMode(BOT, INPUT);
 	
 	//attachInterrupt(digitalPinToInterrupt(BOT), RisingBot, RISING ); //this is fucked for some reason idk whyyyyyyyyyyyyyyyyyyyyyyyyyyy
-	attachInterrupt(digitalPinToInterrupt(TOP), FallingTop, FALLING ); 
-	attachInterrupt(digitalPinToInterrupt(BOT), FallingBot, FALLING );
-
+	attachInterrupt(digitalPinToInterrupt(TOP), RisingTop, CHANGE );
+	attachInterrupt(digitalPinToInterrupt(BOT), RisingBot, CHANGE );
 }
 
+char buffer[40];
+const long interval = 1000; 
+unsigned long previousMillis = 0;
 void loop()
 {
-	noInterrupts();
 	if (topint == true)
 	{
-		if (passedBot == true)
-		{
-			current--;
-			passedBot = false;
-		}
-		else if (passedBot == false)
-		{
-			passedTop = true;
-		}
+		increment1++;
 		topint = false;
 	}
 	if (botint == true)
 	{
-		if (passedTop == true)
-		{
-			current++;
-			passedTop = false;
-		}
-		else if (passedTop == false)
-		{
-			passedBot = true;
-		}
+		increment2++;
 		botint = false;
 	}
 	
-	if (previous != current)
-	{
-		increment = current - previous;
-		Serial.println(increment);
-		if (increment > 0)
-		{
-			Serial.print("OneUp ");
-			Serial.println(current);
-		}
-		else
-		{
-			Serial.print("OneDown ");
-			Serial.println(current);
-		}
-		previous = current;
+	unsigned long currentMillis = millis();  
+	if (currentMillis - previousMillis >= interval) {
+    	previousMillis = currentMillis;
+		
+		sprintf(buffer, "%d %d", increment1, increment2);
+		Serial.println(buffer);	
 	}
-
-	interrupts();
 }
 
-void FallingTop()
+void RisingTop()
 {
 	topint = true;
 }
 
-void FallingBot()
+void RisingBot()
 {
 	botint = true;
 }
