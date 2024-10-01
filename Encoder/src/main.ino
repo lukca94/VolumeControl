@@ -3,6 +3,7 @@
 #define CLK 3
 #define DT 2
 
+
 volatile bool CLKChanged = false;
 volatile bool DTChanged = false;
 
@@ -164,5 +165,6 @@ void ChangeCLK()
 void ChangeDT()
 {
 	DTChanged = true;
+
 }
 
