@@ -2,179 +2,110 @@
 #include <avr/interrupt.h>
 #include <HardwareSerial.h>
 
+#include "EncoderState.h"
+#include "EncoderInput.h"
+#include "RotaryEncoder.h"
+
 // Encoder 1
 #define CLK_1 PD2
+volatile bool currentStateCLK_1 = true;
+volatile bool changedCLK_1 = false;
 #define DT_1 PB2
+volatile bool currentStateDT_1 = true;
+volatile bool changedDT_1 = false;
 
 // Encoder 2
 #define CLK_2 PD3
-#define DT_2 PB53
+volatile bool currentStateCLK_2 = true;
+volatile bool changedCLK_2 = false;
+#define DT_2 PB3
+volatile bool currentStateDT_2 = true;
+volatile bool changedDT_2 = false;
 
-volatile bool CLKChanged_1 = false;
-volatile bool DTChanged_1 = false;
-volatile bool CLKChanged_2 = false;
-volatile bool DTChanged_2 = false;
+// Encoder 3
+#define CLK_3 PD4
+volatile bool currentStateCLK_3 = true;
+volatile bool changedCLK_3 = false;
+#define DT_3 PB4
+volatile bool currentStateDT_3 = true;
+volatile bool changedDT_3 = false;
 
-enum State // CLK DT
-{
-	STATE_0, // Idle 11
-	STATE_1, // Backwards 10
-	STATE_2, // Backwards 00
-	STATE_3, // Backwards 01
-	STATE_4, // Forwards 01
-	STATE_5, // Forwards 00
-	STATE_6	 // Forwards 10
-};
-enum Input
-{
-	NOTHING,
-	INPUT_CLK,
-	INPUT_DT
-};
-class RotaryEncoder
-{
-private:
-	State currentState = STATE_0; // State::STATE_0; je v tom rozdíl?
-
-	void rotaryState0(Input input) // Idle 11
-	{
-		if (input == INPUT_CLK)
-			currentState = STATE_4;
-		else if (input == INPUT_DT)
-			currentState = STATE_1;
-	}
-	void rotaryState1(Input input) // Backwards 10
-	{
-		if (input == INPUT_CLK)
-			currentState = STATE_2;
-		else if (input == INPUT_DT)
-			currentState = STATE_0;
-	}
-	void rotaryState2(Input input) // Backwards 00
-	{
-		if (input == INPUT_CLK)
-			currentState = STATE_1;
-		else if (input == INPUT_DT)
-			currentState = STATE_3;
-	}
-	void rotaryState3(Input input) // Backwards 01
-	{
-		if (input == INPUT_CLK)
-		{
-			currentState = STATE_0;
-			Serial.println("0");
-		}
-		else if (input == INPUT_DT)
-			currentState = STATE_2;
-	}
-	void rotaryState4(Input input) // Forwards 01
-	{
-		if (input == INPUT_CLK)
-			currentState = STATE_0;
-		else if (input == INPUT_DT)
-			currentState = STATE_5;
-	}
-	void rotaryState5(Input input) // Forwards 00
-	{
-		if (input == INPUT_CLK)
-			currentState = STATE_6;
-		else if (input == INPUT_DT)
-			currentState = STATE_4;
-	}
-	void rotaryState6(Input input) // Forwards 10
-	{
-		if (input == INPUT_CLK)
-			currentState = STATE_5;
-		else if (input == INPUT_DT)
-		{
-			currentState = STATE_0;
-			Serial.println("1");
-		}
-	}
-
-public:
-	void rotaryChange(Input input)
-	{
-		switch (currentState)
-		{
-		case STATE_0:
-			rotaryState0(input);
-			break;
-		case STATE_1:
-			rotaryState1(input);
-			break;
-		case STATE_2:
-			rotaryState2(input);
-			break;
-		case STATE_3:
-			rotaryState3(input);
-			break;
-		case STATE_4:
-			rotaryState4(input);
-			break;
-		case STATE_5:
-			rotaryState5(input);
-			break;
-		case STATE_6:
-			rotaryState6(input);
-			break;
-		}
-	}
-};
 
 int main(void)
 {
 	// Set as input
-	DDRD &= ~(1 << CLK_1);
-	DDRD &= ~(1 << CLK_2);
+	DDRD &= ~((1 << CLK_1) | (1 << CLK_2) | (1 << CLK_3));
 
-	DDRB &= ~(1 << DT_1);
-	DDRB &= ~(1 << DT_2);
+	DDRB &= ~((1 << DT_1) | (1 << DT_2) | (1 << DT_3));
 
-	PCICR |= (1 << PCIE2); // 0b00000100; //PD
-	PCMSK2 |= ((1 << PCINT18) | (1 << PCINT19)); // 0b00001100;  // D2 D3
+	PCICR |= ((1 << PCIE2) | (1 << PCIE0));						  	// 0b00000101; //PD PB
 
-	PCICR |= (1 << PCIE0); // 0b00000001; //PB
-	PCMSK0 |= ((1 << PCINT2) | (1 << PCINT3)) // 0b00001100;  // B2 B3 
+	PCMSK2 |= ((1 << PCINT18) | (1 << PCINT19) | (1 << PCINT20)); 	// 0b00011100;  // D2 D3 D4
+	PCMSK0 |= ((1 << PCINT2) | (1 << PCINT3) | (1 << PCINT4)); 		// 0b00011100;  // B2 B3 B4
 
 	Serial.begin(250000);
 
-	Input input;
-	RotaryEncoder encoder1;
+	EncoderInput input1;
+	EncoderInput input2;
+	EncoderInput input3;
 
-	// interrupt
-	// DT
-	// DT_
-	// interrupt
-	// interrupt
-	// CLK
-	// CLK_
-	// interrupt
-	// CLK
-	// DT
-	// CLK_
-	// DT_
+	RotaryEncoder encoder1(0);
+	RotaryEncoder encoder2(1);
+	RotaryEncoder encoder3(2);
+
 	sei();
 	while (true)
 	{
 		// translate interrupts
-		if (CLKChanged_1 == true)
+		if (changedCLK_1 == true)
 		{
-			Serial.println("CLK_");
-			input = INPUT_CLK;
-			CLKChanged_1 = false;
+			input1 = INPUT_CLK;
+			changedCLK_1 = false;
 		}
-		if (DTChanged_1 == true)
+		if (changedDT_1 == true)
 		{
-			Serial.println("DT_");
-			input = INPUT_DT;
-			DTChanged_1 = false;
+			input1 = INPUT_DT;
+			changedDT_1 = false;
 		}
 
-		if (input != NOTHING)
+		if (input1 != NOTHING)
 		{
-			encoder1.rotaryChange(input);
-			input = NOTHING;
+			encoder1.rotaryChange(input1);
+			input1 = NOTHING;
+		}
+
+		if (changedCLK_2 == true)
+		{
+			input2 = INPUT_CLK;
+			changedCLK_2 = false;
+		}
+		if (changedDT_2 == true)
+		{
+			input2 = INPUT_DT;
+			changedDT_2 = false;
+		}
+
+		if (input2 != NOTHING)
+		{
+			encoder2.rotaryChange(input2);
+			input2 = NOTHING;
+		}
+
+		if (changedCLK_3 == true)
+		{
+			input3 = INPUT_CLK;
+			changedCLK_3 = false;
+		}
+		if (changedDT_3 == true)
+		{
+			input3 = INPUT_DT;
+			changedDT_3 = false;
+		}
+
+		if (input3 != NOTHING)
+		{
+			encoder3.rotaryChange(input3);
+			input3= NOTHING;
 		}
 	}
 }
@@ -195,27 +126,39 @@ uint8_t read(volatile uint8_t *address, uint8_t pin)
 	}
 }
 
-ISR(PCINT2_vect) //CLK  pins
+ISR(PCINT2_vect) // CLK  pins
 {
-
-	if (read(&PIND, CLK_1))
+	if (read(&PIND, CLK_1) != currentStateCLK_1)
 	{
-		CLKChanged_1 = true;
+		currentStateCLK_1 = !currentStateCLK_1;
+		changedCLK_1 = true;
 	}
-	if (read(&PIND, CLK_2))
+	if (read(&PIND, CLK_2) != currentStateCLK_2)
 	{
-		CLKChanged_2 = true;
+		currentStateCLK_2 = !currentStateCLK_2;
+		changedCLK_2 = true;
+	}
+	if (read(&PIND, CLK_3) != currentStateCLK_3)
+	{
+		currentStateCLK_3 = !currentStateCLK_3;
+		changedCLK_3 = true;
 	}
 }
-ISR(PCINT0_vect) //DT pins
+ISR(PCINT0_vect) // DT pins
 {
-
-	if (read(&PINB, DT_1))
+	if (read(&PINB, DT_1) != currentStateDT_1)
 	{
-		DTChanged_1 = true;
+		currentStateDT_1 = !currentStateDT_1;
+		changedDT_1 = true;
 	}
-	if (read(&PINB, DT_2))
+	if (read(&PINB, DT_2) != currentStateDT_2)
 	{
-		DTChanged_2 = true;
+		currentStateDT_2 = !currentStateDT_2;
+		changedDT_2 = true;
+	}
+	if (read(&PINB, DT_3) != currentStateDT_3)
+	{
+		currentStateDT_3 = !currentStateDT_3;
+		changedDT_3 = true;
 	}
 }

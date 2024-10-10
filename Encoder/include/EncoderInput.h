@@ -1,0 +1,9 @@
+#ifndef ENCODERINPUT_H
+#define ENCODERINPUT_H
+enum EncoderInput
+{
+	NOTHING,
+	INPUT_CLK,
+	INPUT_DT
+};
+#endif //ENCODERINPUT_H
