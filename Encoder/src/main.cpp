@@ -2,15 +2,18 @@
 #include <avr/interrupt.h>
 #include <HardwareSerial.h>
 
-#define CLK_1 PD3
-#define DT_1 PD2
-// #define CLK_2 PD4
-// #define DT_2 PD5
+// Encoder 1
+#define CLK_1 PD2
+#define DT_1 PB2
+
+// Encoder 2
+#define CLK_2 PD3
+#define DT_2 PB53
 
 volatile bool CLKChanged_1 = false;
 volatile bool DTChanged_1 = false;
-// volatile bool CLKChanged_2 = false;
-// volatile bool DTChanged_2 = false;
+volatile bool CLKChanged_2 = false;
+volatile bool DTChanged_2 = false;
 
 enum State // CLK DT
 {
@@ -121,12 +124,18 @@ public:
 
 int main(void)
 {
+	// Set as input
 	DDRD &= ~(1 << CLK_1);
-	DDRD &= ~(1 << DT_1);
+	DDRD &= ~(1 << CLK_2);
+
+	DDRB &= ~(1 << DT_1);
+	DDRB &= ~(1 << DT_2);
 
 	PCICR |= (1 << PCIE2); // 0b00000100; //PD
-	PCMSK2 |= 0b00001100;  // D2 D3 D4 D5
-	sei();
+	PCMSK2 |= ((1 << PCINT18) | (1 << PCINT19)); // 0b00001100;  // D2 D3
+
+	PCICR |= (1 << PCIE0); // 0b00000001; //PB
+	PCMSK0 |= ((1 << PCINT2) | (1 << PCINT3)) // 0b00001100;  // B2 B3 
 
 	Serial.begin(250000);
 
@@ -145,7 +154,7 @@ int main(void)
 	// DT
 	// CLK_
 	// DT_
-
+	sei();
 	while (true)
 	{
 		// translate interrupts
@@ -186,18 +195,27 @@ uint8_t read(volatile uint8_t *address, uint8_t pin)
 	}
 }
 
-ISR(PCINT2_vect)
+ISR(PCINT2_vect) //CLK  pins
 {
-	Serial.println("____");
 
 	if (read(&PIND, CLK_1))
 	{
-		Serial.println("CLK");
 		CLKChanged_1 = true;
 	}
-	if (read(&PIND, DT_1))
+	if (read(&PIND, CLK_2))
 	{
-		Serial.println("DT");
+		CLKChanged_2 = true;
+	}
+}
+ISR(PCINT0_vect) //DT pins
+{
+
+	if (read(&PINB, DT_1))
+	{
 		DTChanged_1 = true;
+	}
+	if (read(&PINB, DT_2))
+	{
+		DTChanged_2 = true;
 	}
 }
