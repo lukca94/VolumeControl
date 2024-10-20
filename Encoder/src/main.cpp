@@ -8,46 +8,42 @@
 
 // Encoder 1
 #define CLK_1 PD2
-volatile bool currentStateCLK_1 = true;
-volatile bool changedCLK_1 = false;
 #define DT_1 PB2
-volatile bool currentStateDT_1 = true;
-volatile bool changedDT_1 = false;
+#define BTN_1 PC0
 
 // Encoder 2
 #define CLK_2 PD3
-volatile bool currentStateCLK_2 = true;
-volatile bool changedCLK_2 = false;
 #define DT_2 PB3
-volatile bool currentStateDT_2 = true;
-volatile bool changedDT_2 = false;
+#define BTN_2 PC1
 
 // Encoder 3
 #define CLK_3 PD4
-volatile bool currentStateCLK_3 = true;
-volatile bool changedCLK_3 = false;
 #define DT_3 PB4
-volatile bool currentStateDT_3 = true;
-volatile bool changedDT_3 = false;
+#define BTN_3 PC2
 
+// button ISR flags
+volatile bool pressedBTN_1 = false;
+volatile bool pressedBTN_2 = false;
+volatile bool pressedBTN_3 = false;
+
+volatile EncoderInput input1;
+volatile EncoderInput input2;
+volatile EncoderInput input3;
 
 int main(void)
 {
 	// Set as input
 	DDRD &= ~((1 << CLK_1) | (1 << CLK_2) | (1 << CLK_3));
-
 	DDRB &= ~((1 << DT_1) | (1 << DT_2) | (1 << DT_3));
+	DDRC &= ~((1 << BTN_1) | (1 << BTN_2) | (1 << BTN_3));
 
-	PCICR |= ((1 << PCIE2) | (1 << PCIE0));						  	// 0b00000101; //PD PB
+	PCICR |= ((1 << PCIE2) | (1 << PCIE1) | (1 << PCIE0)); // 0b00000111; //PD PC PB
 
-	PCMSK2 |= ((1 << PCINT18) | (1 << PCINT19) | (1 << PCINT20)); 	// 0b00011100;  // D2 D3 D4
-	PCMSK0 |= ((1 << PCINT2) | (1 << PCINT3) | (1 << PCINT4)); 		// 0b00011100;  // B2 B3 B4
+	PCMSK2 |= ((1 << PCINT18) | (1 << PCINT19) | (1 << PCINT20));
+	PCMSK0 |= ((1 << PCINT2) | (1 << PCINT3) | (1 << PCINT4));
+	PCMSK1 |= ((1 << PCINT8) | (1 << PCINT9) | (1 << PCINT10));
 
 	Serial.begin(250000);
-
-	EncoderInput input1;
-	EncoderInput input2;
-	EncoderInput input3;
 
 	RotaryEncoder encoder1(0);
 	RotaryEncoder encoder2(1);
@@ -57,55 +53,41 @@ int main(void)
 	while (true)
 	{
 		// translate interrupts
-		if (changedCLK_1 == true)
-		{
-			input1 = INPUT_CLK;
-			changedCLK_1 = false;
-		}
-		if (changedDT_1 == true)
-		{
-			input1 = INPUT_DT;
-			changedDT_1 = false;
-		}
 
+		// encoder 1
 		if (input1 != NOTHING)
 		{
 			encoder1.rotaryChange(input1);
 			input1 = NOTHING;
 		}
-
-		if (changedCLK_2 == true)
+		if (pressedBTN_1 == true)
 		{
-			input2 = INPUT_CLK;
-			changedCLK_2 = false;
-		}
-		if (changedDT_2 == true)
-		{
-			input2 = INPUT_DT;
-			changedDT_2 = false;
+			Serial.println("0 2");
+			pressedBTN_1 = false;
 		}
 
+		// encoder 2
 		if (input2 != NOTHING)
 		{
 			encoder2.rotaryChange(input2);
 			input2 = NOTHING;
 		}
-
-		if (changedCLK_3 == true)
+		if (pressedBTN_2 == true)
 		{
-			input3 = INPUT_CLK;
-			changedCLK_3 = false;
-		}
-		if (changedDT_3 == true)
-		{
-			input3 = INPUT_DT;
-			changedDT_3 = false;
+			Serial.println("1 2");
+			pressedBTN_2 = false;
 		}
 
+		// encoder 3
 		if (input3 != NOTHING)
 		{
 			encoder3.rotaryChange(input3);
-			input3= NOTHING;
+			input3 = NOTHING;
+		}
+		if (pressedBTN_3 == true)
+		{
+			Serial.println("2 2");
+			pressedBTN_3 = false;
 		}
 	}
 }
@@ -128,37 +110,60 @@ uint8_t read(volatile uint8_t *address, uint8_t pin)
 
 ISR(PCINT2_vect) // CLK  pins
 {
+	static bool currentStateCLK_1 = true;
+	static bool currentStateCLK_2 = true;
+	static bool currentStateCLK_3 = true;
+
 	if (read(&PIND, CLK_1) != currentStateCLK_1)
 	{
 		currentStateCLK_1 = !currentStateCLK_1;
-		changedCLK_1 = true;
+		input1 = INPUT_CLK;
 	}
 	if (read(&PIND, CLK_2) != currentStateCLK_2)
 	{
 		currentStateCLK_2 = !currentStateCLK_2;
-		changedCLK_2 = true;
+		input2 = INPUT_CLK;
 	}
 	if (read(&PIND, CLK_3) != currentStateCLK_3)
 	{
 		currentStateCLK_3 = !currentStateCLK_3;
-		changedCLK_3 = true;
+		input3 = INPUT_CLK;
 	}
 }
 ISR(PCINT0_vect) // DT pins
 {
+	static bool currentStateDT_1 = true;
+	static bool currentStateDT_2 = true;
+	static bool currentStateDT_3 = true;
+
 	if (read(&PINB, DT_1) != currentStateDT_1)
 	{
 		currentStateDT_1 = !currentStateDT_1;
-		changedDT_1 = true;
+		input1 = INPUT_DT;
 	}
 	if (read(&PINB, DT_2) != currentStateDT_2)
 	{
 		currentStateDT_2 = !currentStateDT_2;
-		changedDT_2 = true;
+		input2 = INPUT_DT;
 	}
 	if (read(&PINB, DT_3) != currentStateDT_3)
 	{
 		currentStateDT_3 = !currentStateDT_3;
-		changedDT_3 = true;
+		input3 = INPUT_DT;
+	}
+}
+ISR(PCINT1_vect) // BTN pins
+{
+	if (read(&PINC, BTN_1) == 0)
+	{
+		pressedBTN_1 = true;
+	}
+	if (read(&PINC, BTN_2) == 0)
+	{
+		pressedBTN_2 = true;
+	}
+	if (read(&PINC, BTN_3) == 0)
+	{
+		pressedBTN_3 = true;
 	}
 }
